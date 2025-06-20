@@ -80,7 +80,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center">ยังไม่มีรายการ Purchase Item</td>
+                        <td colspan="9" class="text-center">ยังไม่มีรายการ Purchase Item</td>
                     </tr>
                 @endforelse
             </tbody>

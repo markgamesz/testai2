@@ -2,108 +2,108 @@
 @extends('layouts.adminbase')
 
 @section('content')
-<div class="container">
-  <h3>โอนสินค้า (Branch Stock Transfer)</h3>
-  @if(session('success'))
-    <div class="alert alert-success">{{ session('success') }}</div>
-  @endif
+    <div class="container">
+        <h2>โอนสต็อกข้ามสาขา</h2>
 
-  <form action="{{ route('stock_transfers.store') }}" method="POST">
-    @csrf
-    <div class="row mb-3">
-      <div class="col">
-        <label>จากสาขา</label>
-        <select name="from_branch" class="form-select">
-          <option value="">-- เลือก --</option>
-          @foreach($branches as $b)
-            <option value="{{ $b->branch_id }}">{{ $b->branch_name }}</option>
-          @endforeach
-        </select>
-      </div>
-      <div class="col">
-        <label>ไปยังสาขา</label>
-        <select name="to_branch" class="form-select">
-          <option value="">-- เลือก --</option>
-          @foreach($branches as $b)
-            <option value="{{ $b->branch_id }}">{{ $b->branch_name }}</option>
-          @endforeach
-        </select>
-      </div>
-      <div class="col">
-        <label>วันที่โอน</label>
-        <input type="date" name="transfer_date" class="form-control" value="{{ date('Y-m-d') }}">
-      </div>
+        @if (session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+
+        <form action="{{ route('stock_transfers.store') }}" method="POST">
+            @csrf
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label>จากสาขา</label>
+                    <select id="from_branch" name="from_branch_id" class="form-select" required>
+                        <option value="">-- เลือกสาขาต้นทาง --</option>
+                        @foreach ($branches as $b)
+                            <option value="{{ $b->branch_id_id }}">{{ $b->branch_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label>ไปยังสาขา</label>
+                    <select name="to_branch_id" class="form-select" required>
+                        <option value="">-- เลือกสาขาปลายทาง --</option>
+                        @foreach ($branches as $b)
+                            <option value="{{ $b->branch_id_id }}">{{ $b->branch_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <div id="stocks-section" style="display:none">
+                <h5>เลือกรายการสต็อก</h5>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="checkAll"></th>
+                            <th>รหัส</th>
+                            <th>ชื่อสินค้า</th>
+                            <th>จำนวน</th>
+
+                        </tr>
+                    </thead>
+                    <tbody id="stocks-body">
+                        {{-- ข้อมูลจะถูกเติมด้วย AJAX --}}
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="submit" class="btn btn-primary">โอนสต็อก</button>
+        </form>
     </div>
-
-    <h5>รายการโอน</h5>
-    <table class="table" id="transferTable">
-      <thead>
-        <tr>
-          <th>#</th><th>สินค้า</th><th>คงเหลือ</th><th>จำนวน</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr class="transfer-row">
-          <td class="row-index">1</td>
-          <td>
-            <select name="item_id[]" class="form-select select-item">
-              <option value="">-- เลือก --</option>
-              @foreach($purchaseItems as $pi)
-                @php $rem = $pi->item_quantity - ($pi->used_quantity ?? 0); @endphp
-                <option value="{{ $pi->id }}" data-remain="{{ $rem }}">
-                  {{ $pi->item_name }} ({{ $rem }} คงเหลือ)
-                </option>
-              @endforeach
-            </select>
-          </td>
-          <td><span class="remain-qty">0</span></td>
-          <td><input name="qty[]" type="number" class="form-control" value="0" min="1"></td>
-        </tr>
-      </tbody>
-    </table>
-    <button type="button" id="addRowBtn" class="btn btn-secondary">+ เพิ่มรายการ</button>
-    <button type="submit" class="btn btn-primary mt-3">บันทึกโอน</button>
-  </form>
-</div>
-@endsection
-
 @section('js')
-<script>
-document.addEventListener('DOMContentLoaded',function(){
-  const tbody=document.querySelector('#transferTable tbody');
-  document.getElementById('addRowBtn').onclick=function(){
-    const clone=tbody.querySelector('tr').cloneNode(true);
-    clone.querySelectorAll('select, input').forEach(el=>el.value=el.tagName=='INPUT'?0:'');
-    tbody.appendChild(clone);
-    updateIndices();
-  };
-  tbody.onclick=function(e){
-    if(e.target.matches('.transfer-row .remove-row')){
-      if(tbody.children.length>1) { e.target.closest('tr').remove(); updateIndices(); }
-    }
-  };
-  tbody.onchange=function(e){
-    if(e.target.matches('.select-item')){
-      const tr=e.target.closest('tr');
-      const rem=e.target.selectedOptions[0].dataset.remain||0;
-      tr.querySelector('.remain-qty').textContent=rem;
-      const qtyInput=tr.querySelector('input[name="qty[]"]');
-      qtyInput.max=rem;
-      if(qtyInput.value>rem) qtyInput.value=rem;
-    }
-  };
-  tbody.oninput=function(e){
-    if(e.target.matches('input[name="qty[]"]')){
-      const tr=e.target.closest('tr');
-      const mx=tr.querySelector('.select-item').selectedOptions[0].dataset.remain||0;
-      let v=parseInt(e.target.value)||0;
-      if(v>mx)v=mx; if(v<1)v=1; e.target.value=v;
-    }
-  };
-  function updateIndices(){
-    tbody.querySelectorAll('tr').forEach((tr,i)=>{ tr.querySelector('.row-index').textContent=i+1; });
-  }
-  updateIndices();
-});
-</script>
+    <script>
+        // เมื่อคลิก checkbox “เลือกทั้งหมด”
+        $('#checkAll').on('change', function() {
+            $('.check-item').prop('checked', $(this).prop('checked'));
+        });
+
+        // ถ้ามีการคลิก checkbox แต่ละแถว ให้คำนวนว่าทั้งหมดถูกเลือกหรือไม่
+        $('.check-item').on('change', function() {
+            const allChecked = $('.check-item:checked').length === $('.check-item').length;
+            $('#checkAll').prop('checked', allChecked);
+        });
+
+        document.getElementById('from_branch').addEventListener('change', function() {
+            const branchId = this.value;
+            const section = document.getElementById('stocks-section');
+            const tbody = document.getElementById('stocks-body');
+
+            tbody.innerHTML = '';
+            if (!branchId) {
+                section.style.display = 'none';
+                return;
+            }
+
+            fetch(`/stock_transfers/stocks/${branchId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    data.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                    <td><input type="checkbox" class="check-item" name="stock_ids[]" value="${item.id}" ></td>
+                    <td>${item.barcode}</td>
+                    <td>${item.product_name}</td>
+                    <td>${item.quantity}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                    section.style.display = 'block';
+                })
+                .catch(err => {
+                    console.error('Error fetching stocks:', err);
+                    alert('ไม่สามารถโหลดรายการสต็อกได้ กรุณาลองใหม่อีกครั้ง');
+                });
+        });
+    </script>
+@endsection
 @endsection

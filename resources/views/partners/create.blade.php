@@ -69,20 +69,25 @@
                     <input type="text" id="part_vatnum" name="part_vatnum" class="form-control" maxlength="13"
                         placeholder="เลขที่ผู้เสียภาษี 13หลัก">
                 </div>
+                <div id="vat-error" class="text-danger" style="display:none;">
+                    เลข VAT ต้องประกอบด้วยตัวเลข 13 หลักเท่านั้น
+                </div>
 
-                
+
                 <div class="form-group">
                     <label for="part_vatstatus">เลือกสถานะVat</label><span class="text-danger">*</span>
-                    <select name="part_vatstatus" class="form-select">
+                    <select id="part_vatstatus" name="part_vatstatus" class="form-select">
                         <option value="">เลือกสถานะมีVat/ไม่มีVat</option>
                         <option value="1">มีVat</option>
                         <option value="0">ไม่มี่Vat</option>
                     </select>
                 </div>
-
-                <div id="vat-error" class="text-danger" style="display:none;">
-                    เลข VAT ต้องประกอบด้วยตัวเลข 13 หลักเท่านั้น
+                <!-- ข้อความแจ้งเตือนเมื่อยังไม่เลือก -->
+                <div id="vatstatus-error" class="text-danger" style="display:none; margin-top:0.25rem;">
+                    กรุณาเลือกสถานะ VAT
                 </div>
+
+
                 <button type="submit" class="btn btn-primary mt-3">บันทึก</button>
                 <a href="{{ route('partners.index') }}" class="btn btn-warning mt-3">ย้อนกลับ</a>
             </div>
@@ -201,12 +206,16 @@
                 }
             });
 
-            
+
 
             (function() {
                 const $form = document.getElementById('partnerForm');
                 const $vat = document.getElementById('part_vatnum');
                 const $error = document.getElementById('vat-error');
+
+                // **ใหม่**: element สำหรับสถานะ VAT
+                const $vatStatus = document.getElementById('part_vatstatus');
+                const $vatStatusError = document.getElementById('vatstatus-error');
 
                 // ลบอักขระที่ไม่ใช่ตัวเลขออกทุกครั้งที่พิมพ์
                 $vat.addEventListener('input', function() {
@@ -214,15 +223,39 @@
                     $error.style.display = 'none';
                 });
 
+                // ซ่อน error สถานะ VAT เมื่อผู้ใช้เปลี่ยนค่า
+                $vatStatus.addEventListener('change', function() {
+                    if (this.value !== '') {
+                        $vatStatusError.style.display = 'none';
+                    }
+                });
+
                 // ก่อนส่งฟอร์ม ให้เช็คความยาว 13 หลัก
                 $form.addEventListener('submit', function(e) {
+                    let hasError = false;
                     const v = $vat.value.trim();
                     if (v.length !== 13) {
                         e.preventDefault(); // หยุดการส่งฟอร์ม
                         $error.style.display = 'block';
                         $vat.focus();
+                        hasError = true;
                     }
+
+                    // **ใหม่**: ตรวจสอบว่าเลือกสถานะ VAT หรือยัง
+                    if ($vatStatus.value === '') {
+                        e.preventDefault();
+                        $vatStatusError.style.display = 'block';
+                        // ถ้ายังไม่มี error VAT number ให้ focus ไปที่ dropdown สถานะ
+                        if (!hasError) {
+                            $vatStatus.focus();
+                        }
+                        hasError = true;
+                    }
+                    // ถ้ามี error อย่างน้อยหนึ่งจุด ให้หยุด submit
+                    if (hasError) return;
                 });
+
+
             })();
 
 

@@ -75,7 +75,7 @@
                      </a>
                  </li>
                  <li>
-                    <a href="#">
+                    <a href="{{ route('stock_transfers.index')}}">
                         <i class="bi bi-circle"></i><span>โอน</span>
                     </a>
                 </li>

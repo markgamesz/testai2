@@ -3,13 +3,14 @@
 @section('content')
     <div class="container">
         <h1>ข้อมูลบริษัท</h1>
-        <form action="{{ route('company.store') }}" method="POST">
+        <form id="partnerForm" action="{{ route('company.store') }}" method="POST">
             @csrf
 
             <div class="col-md-6">
                 <div class="form-group">
                     <label for="com_name">ชื่อบริษัท</label><span class="text-danger">*</span>
-                    <input type="text" name="com_name" class="form-control" placeholder="เช่น บริษัท เอบีซี จำกัด" required>
+                    <input type="text" name="com_name" class="form-control" placeholder="เช่น บริษัท เอบีซี จำกัด"
+                        required>
                 </div>
 
                 <div class="form-group">
@@ -51,8 +52,12 @@
                 </div>
                 <div class="form-group">
                     <label for="com_vatnum">เลขประจำตัวผู้เสียภาษี</label><span class="text-danger">*</span>
-                    <input type="text" name="com_vatnum" class="form-control" maxlength="13"
+                    <input  type="text" id="com_vatnum" name="com_vatnum" class="form-control" maxlength="13"
                         placeholder="เลขที่ผู้เสียภาษี 13หลัก" required>
+                </div>
+
+                <div id="vat-error" class="text-danger" style="display:none;">
+                    เลข VAT ต้องประกอบด้วยตัวเลข 13 หลักเท่านั้น
                 </div>
 
 
@@ -154,14 +159,29 @@
                     this.value = this.value.replace(/\D/g, '');
                 });
 
-                $('#com_vatnum').on('blur', function() {
-                    const v = this.value.trim();
+               
+            });
+            (function() {
+                const $form = document.getElementById('partnerForm');
+                const $vat = document.getElementById('com_vatnum');
+                const $error = document.getElementById('vat-error');
+
+                // ลบอักขระที่ไม่ใช่ตัวเลขออกทุกครั้งที่พิมพ์
+                $vat.addEventListener('input', function() {
+                    this.value = this.value.replace(/\D/g, '');
+                    $error.style.display = 'none';
+                });
+
+                // ก่อนส่งฟอร์ม ให้เช็คความยาว 13 หลัก
+                $form.addEventListener('submit', function(e) {
+                    const v = $vat.value.trim();
                     if (v.length !== 13) {
-                        alert('เลข VAT ต้องประกอบด้วยตัวเลข 13 หลักเท่านั้น');
-                        $(this).focus();
+                        e.preventDefault(); // หยุดการส่งฟอร์ม
+                        $error.style.display = 'block';
+                        $vat.focus();
                     }
                 });
-            });
+            })();
         });
 
         document.addEventListener('DOMContentLoaded', function() {

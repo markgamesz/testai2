@@ -10,6 +10,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\RestockController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\PurchaseItemController;
+use App\Http\Controllers\BranchStockTransferController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -169,6 +170,39 @@ Route::middleware('auth')->group(function () {
 
     // POST บันทึกผลลัพธ์
     Route::post('/stocks/process', [StockController::class, 'processStore'])->name('stocks.process_store');
+
+
+
+    Route::get('/stocks/receive',      [StockController::class, 'receiveForm'])->name('stocks.receive');
+    Route::post('/stocks/store-receive', [StockController::class, 'storeReceive'])->name('stocks.store_receive');
+
+
+
+    // แสดงรายการโอน (GET /stock_transfers)
+    Route::get('stock_transfers', [BranchStockTransferController::class, 'index'])
+        ->name('stock_transfers.index');
+
+    // ฟอร์มสร้างโอน (GET /stock_transfers/create)
+    Route::get('stock_transfers/create', [BranchStockTransferController::class, 'create'])
+        ->name('stock_transfers.create');
+
+    // บันทึกโอน (POST /stock_transfers)
+    Route::post('stock_transfers', [BranchStockTransferController::class, 'store'])
+        ->name('stock_transfers.store');
+
+    // แสดงใบโอน (GET /stock_transfers/{stock_transfer})
+    Route::get('stock_transfers/{stock_transfer}', [BranchStockTransferController::class, 'show'])
+        ->name('stock_transfers.show');
+
+    // AJAX สแกน Barcode
+    Route::post('stock_transfers/{stock_transfer}/scan', [BranchStockTransferController::class, 'scan'])
+        ->name('stock_transfers.scan');
+
+    // รับเข้าสาขาปลายทาง
+    Route::post('stock_transfers/{stock_transfer}/receive', [BranchStockTransferController::class, 'receive'])
+        ->name('stock_transfers.receive');
+
+    Route::get ('stock_transfers/stocks/{branch}', [BranchStockTransferController::class, 'fetchStocks']);
 });
 
 require __DIR__ . '/auth.php';

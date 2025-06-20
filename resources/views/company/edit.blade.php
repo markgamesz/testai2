@@ -3,7 +3,7 @@
 @section('content')
     <div class="container">
         <h1>ข้อมูลบริษัท</h1>
-        <form action="{{ route('company.update', $company->com_id) }}" method="POST">
+        <form id="partnerForm" action="{{ route('company.update', $company->com_id) }}" method="POST">
             @csrf
             @method('PUT')
             <div class="col-md-6">
@@ -53,8 +53,11 @@
 
                 <div class="form-group">
                     <label for="com_vatnum">เลขประจำตัวผู้เสียภาษี</label><span class="text-danger">*</span>
-                    <input type="text" name="com_vatnum" class="form-control" value="{{ $company->com_vatnum }}"
+                    <input id="com_vatnum" type="text" name="com_vatnum" class="form-control" value="{{ $company->com_vatnum }}"
                         maxlength="13" placeholder="เลขที่ผู้เสียภาษี 13หลัก" required>
+                </div>
+                <div id="vat-error" class="text-danger" style="display:none;">
+                    เลข VAT ต้องประกอบด้วยตัวเลข 13 หลักเท่านั้น
                 </div>
 
                
@@ -181,6 +184,28 @@
                     }
                 }
             });
+
+           (function() {
+                const $form = document.getElementById('partnerForm');
+                const $vat = document.getElementById('com_vatnum');
+                const $error = document.getElementById('vat-error');
+
+                // ลบอักขระที่ไม่ใช่ตัวเลขออกทุกครั้งที่พิมพ์
+                $vat.addEventListener('input', function() {
+                    this.value = this.value.replace(/\D/g, '');
+                    $error.style.display = 'none';
+                });
+
+                // ก่อนส่งฟอร์ม ให้เช็คความยาว 13 หลัก
+                $form.addEventListener('submit', function(e) {
+                    const v = $vat.value.trim();
+                    if (v.length !== 13) {
+                        e.preventDefault(); // หยุดการส่งฟอร์ม
+                        $error.style.display = 'block';
+                        $vat.focus();
+                    }
+                });
+            })();
         });
     </script>
 @endsection

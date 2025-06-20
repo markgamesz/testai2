@@ -202,7 +202,7 @@ class StockController extends Controller
             Stock::create([
                 'purchase_item_id' => $item->id,
                 'quantity'         => -$withdraw,
-                
+
             ]);
         }
 
@@ -211,7 +211,7 @@ class StockController extends Controller
             ->with('success', 'ถอนสินค้าเรียบร้อยแล้ว');
     }
 
-     public function processForm(Request $request)
+    public function processForm(Request $request)
     {
         $query = PurchaseItem::with('purchase');
 
@@ -312,5 +312,49 @@ class StockController extends Controller
         return redirect()
             ->route('stocks.index')
             ->with('success', 'ดำเนินการถอนสินค้าและบันทึก Stock Process เรียบร้อยแล้ว');
+    }
+
+    public function receiveForm()
+    {
+        // ดึงข้อมูล Stock Items ที่พร้อมรับเข้า
+        $stockItems = Stock::with('purchaseItem.purchase')->get();
+        return view('stocks.receive', compact('stockItems'));
+    }
+
+    public function storeReceive(Request $request)
+    {
+        // Validate: ต้องมี item_id[] และ receive_qty[]
+        $rules = [];
+        foreach ($request->input('item_id', []) as $i => $id) {
+            $rules["item_id.$i"]       = 'required|exists:stocks,id';
+            $rules["receive_qty.$i"]   = 'required|integer|min:1';
+        }
+        $request->validate($rules);
+
+        // วนลูปรับเข้า
+        foreach ($request->input('item_id') as $i => $stockId) {
+            $qty = intval($request->input("receive_qty.$i"));
+            if ($qty <= 0) continue;
+
+            $stock = Stock::find($stockId);
+            if (!$stock) continue;
+
+            // เพิ่มจำนวนเข้า (positive) ลงสต็อก
+            $stock->quantity += $qty;
+            $stock->save();
+
+            // บันทึกประวัติเข้าสต็อก (ถ้ามีตาราง StockProcess)
+         /*   StockProcess::create([
+                'stock_id'      => $stock->id,
+                'quantity'      => $qty,
+                'unit_price'    => $stock->unit_price,
+                'total_cost'    => $qty * $stock->unit_cost,
+                'type'          => 'in',
+                'processed_at'  => now(),
+            ]);*/
+        }
+
+        return redirect()->route('stocks.receive')
+            ->with('success', 'รับสินค้าเข้าเรียบร้อยแล้ว');
     }
 }
